@@ -1,0 +1,401 @@
+---
+description: Eastern Keel motion and interaction system. Easing and duration tokens, scroll reveals, view transitions, anchor positioned menus, kinetic type, reduced motion. Use for any motion or interaction work.
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+alwaysApply: false
+---
+
+# Eastern Keel | Animation and Interaction | 2026
+
+*Standards verified June 2026. Assumes Tailwind CSS v4 and Next.js 16.2 App Router. Read before any motion, transition, or interaction work.*
+
+## Philosophy
+
+Animation is not decoration. Every motion serves a purpose. It reveals content, confirms an interaction, guides attention, or communicates hierarchy. The feeling is editorial and alive, like turning a page in a well made magazine that somehow responds to you. Motion is subtle but present. Nothing sits dead. The cumulative effect is a site that feels handcrafted without ever feeling busy.
+
+Rules that never break:
+
+- No colored drop shadows, ever.
+- No bounce or elastic easing, ever.
+- No zoom in entrance that scales above 1.0.
+- No simultaneous full page motion. Stagger everything.
+- All motion respects `prefers-reduced-motion`, handled granularly, never with a single blanket kill switch.
+- Motion enhances content. It never delays access to it.
+- CSS first. Reach for JavaScript only when CSS cannot express the effect. Modern CSS (`@starting-style`, scroll driven animations, View Transitions, anchor positioning, `linear()`) now covers nearly everything that used to need a library.
+- No custom cursor. The system cursor is the cursor.
+
+---
+
+## Easing tokens
+
+Define once in the Tailwind v4 theme. Never use the linear, ease in, or ease out defaults. Never bounce or elastic.
+
+```css
+/* globals.css */
+@import "tailwindcss";
+
+@theme {
+  --ease-out-soft:   cubic-bezier(0.16, 1, 0.3, 1);    /* most entrances */
+  --ease-in-soft:    cubic-bezier(0.7, 0, 0.84, 0);    /* exits */
+  --ease-inout-soft: cubic-bezier(0.45, 0, 0.55, 1);   /* hovers, toggles */
+  --ease-editorial:  cubic-bezier(0.22, 1, 0.36, 1);   /* hero type reveals */
+  --ease-hover:      cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+```
+
+Tailwind v4 generates `ease-out-soft`, `ease-editorial`, and the rest as utilities from these variables. If a genuinely spring like curve is ever needed, use the CSS `linear()` easing function with a generated point list, never a JavaScript spring library. The house style avoids springs. This is an escape hatch, not an invitation.
+
+---
+
+## Duration tokens
+
+```css
+@theme {
+  --duration-instant:  80ms;   /* toggles, checkbox, switch */
+  --duration-fast:     150ms;  /* hover color, border, opacity */
+  --duration-base:     300ms;  /* hover transforms, CTA transitions */
+  --duration-moderate: 500ms;  /* scroll reveals, card entrances */
+  --duration-slow:     700ms;  /* hero entrances, section reveals */
+  --duration-xslow:    1000ms; /* display type, full page transitions */
+}
+```
+
+Never animate a single element longer than 1000ms. A staggered sequence may run longer in total, which is fine.
+
+---
+
+## Page load: the page assembles in layers
+
+Navigation arrives first, then the hero, then content below. Each layer staggers in with a slight upward drift and fade. The page feels composed, not popped in.
+
+```css
+nav { animation: nav-in 500ms var(--ease-out-soft) both; }
+@keyframes nav-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+.hero-image { animation: image-in 1000ms var(--ease-out-soft) 200ms both; }
+@keyframes image-in { from { opacity: 0; transform: scale(1.04); } to { opacity: 1; transform: scale(1); } }
+
+.hero-sub { animation: fade-up 600ms var(--ease-out-soft) 500ms both; }
+.hero-cta { animation: fade-up 600ms var(--ease-out-soft) 650ms both; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+```
+
+### Display headline, word by word
+
+Split the headline into words and clip reveal each, rising from below a masked line. Pure CSS so it runs before JavaScript and never flashes invisible.
+
+```tsx
+// components/ui/SplitHeadline.tsx
+export function SplitHeadline({ text, className, delay = 0 }: { text: string; className?: string; delay?: number }) {
+  const words = text.split(' ')
+  return (
+    <span className={className} aria-label={text}>
+      {words.map((word, i) => (
+        <span key={i} className="inline-block overflow-hidden" aria-hidden="true">
+          <span className="inline-block animate-word-in"
+                style={{ animationDelay: `${delay + i * 60}ms`, animationFillMode: 'both' }}>
+            {word}&nbsp;
+          </span>
+        </span>
+      ))}
+    </span>
+  )
+}
+```
+
+```css
+@keyframes word-in { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+.animate-word-in { animation: word-in 700ms var(--ease-editorial) both; }
+```
+
+### Rule lines draw themselves
+
+```css
+.rule-draw { transform-origin: left center; animation: rule-in 800ms var(--ease-out-soft) 300ms both; }
+@keyframes rule-in { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+```
+
+SSR safety: anything gated on JavaScript state must render visible by default and animate only once the runtime confirms it can. Pure CSS animations are safe because they need no JavaScript.
+
+---
+
+## One expressive type moment: kinetic variable weight
+
+Allowed once per page, on the primary display headline only. As the hero settles or as the reader scrolls it into place, the headline shifts weight along its variable axis. This is the structural use of the 2026 kinetic type trend: the motion is the type asserting itself, not an ornament bolted on. Gate it behind reduced motion and keep it to one element.
+
+```css
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .display-kinetic {
+      animation: weight-settle linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 50%;
+    }
+    @keyframes weight-settle {
+      from { font-variation-settings: "wght" 300; }
+      to   { font-variation-settings: "wght" 720; }
+    }
+  }
+}
+```
+
+Never apply this to body text. Never to more than one element. Never as an infinite loop.
+
+---
+
+## Toggled content: @starting-style, not JavaScript classes
+
+For anything that enters by toggling `display` (menus, dialogs, popovers, accordions), use `@starting-style` with `transition-behavior: allow-discrete`. No JavaScript added classes, no setTimeout. Baseline since August 2024. Non supporting browsers simply show the content without the animation.
+
+```css
+.overlay-menu, dialog {
+  opacity: 1; transform: translateY(0);
+  transition:
+    opacity 300ms var(--ease-out-soft),
+    transform 300ms var(--ease-out-soft),
+    display 300ms allow-discrete,
+    overlay 300ms allow-discrete;
+}
+@starting-style {
+  .overlay-menu, dialog { opacity: 0; transform: translateY(8px); }
+}
+.overlay-menu[hidden], dialog:not([open]) { opacity: 0; transform: translateY(8px); }
+```
+
+This pairs directly with the anchor positioned, Popover API menus from the design language document. Anchor positioning places the menu, the Popover API opens and closes it, and `@starting-style` animates the entrance. Zero positioning or toggling JavaScript.
+
+---
+
+## Scroll reveals
+
+Every content block that enters the viewport animates in once and stays. Children stagger so they cascade rather than arrive together. Two layers.
+
+**Baseline: Intersection Observer.** Works everywhere, around 98 percent support. The production safe default.
+
+```tsx
+// hooks/useInView.ts
+'use client'
+import { useEffect, useRef, useState } from 'react'
+export function useInView(options?: IntersectionObserverInit) {
+  const ref = useRef<HTMLElement>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setInView(true); observer.unobserve(el) }
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px', ...options })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return { ref, inView }
+}
+```
+
+**Progressive enhancement: CSS scroll driven animations** (`animation-timeline: view()`). Shipped in Chrome and Safari. Firefox still gates it behind a flag as of mid-2026, and it is on the Interop 2026 list, so check support before promoting it past `@supports`. Gate it and let Intersection Observer cover the rest.
+
+```css
+@supports (animation-timeline: view()) {
+  .reveal-css {
+    animation: fade-up-sda linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 60%;
+  }
+  @keyframes fade-up-sda { from { opacity: 0; transform: translateY(32px); } to { opacity: 1; transform: translateY(0); } }
+}
+```
+
+When Firefox ships scroll driven animations unflagged, the Intersection Observer layer can be retired. Until then, keep both.
+
+### Reveal behavior by element
+
+- Display headlines: up, 700ms.
+- Rule lines: scaleX 0 to 1 from left, 600ms, 50ms after the section enters.
+- Body paragraphs: up 20px, 500ms, stagger 80ms per paragraph.
+- Images: opacity 0 to 1 with scale 1.03 to 1, 700ms. No translateY on images, so layout does not shift.
+- Mosaic images: stagger 80ms to 100ms, left to right or diagonal.
+- Stat numbers: count up from 0, 1200ms, with a reduced motion check that sets the final value immediately.
+- Sidebar labels: fade only, 400ms, 200ms after the section enters.
+
+---
+
+## Hover
+
+Every interactive element responds immediately and precisely. Hover on at 150ms to 200ms, hover off slightly slower at 200ms to 300ms.
+
+**Nav links:** an underline draws from the left via `scaleX`, opacity drops to 0.7.
+
+**CTA links:** the arrow slides right on hover, the text stays still.
+
+```css
+.cta-link { display: inline-flex; align-items: center; gap: 10px; }
+.cta-link svg { transition: transform 200ms var(--ease-out-soft); }
+.cta-link:hover svg { transform: translateX(4px); }
+```
+
+**Images:** scale to 1.04 inside an `overflow: hidden` wrapper. No brightness change, no overlay, no shadow. Scale only.
+
+**Buttons:** ghost fills solid and inverts text, solid darkens 10 percent via `color-mix`. No scale, no shadow.
+
+**Cards (if used):** border opacity rises from 10 to 25 percent, and a 1px top rule wipes in from the left via `scaleX`, never `width`.
+
+---
+
+## Page transitions: View Transitions API
+
+Between routes, use the View Transitions API. Same document view transitions have been Baseline across Chrome, Safari, and Firefox since October 2025. Cross document transitions work in Chrome and Safari, with Firefox falling back to an instant navigation, which is acceptable.
+
+The page is replaced, not thrown across the screen. Opacity plus a small vertical drift, nothing more.
+
+```css
+::view-transition-old(root) { animation: vt-out 200ms var(--ease-in-soft) both; }
+::view-transition-new(root) { animation: vt-in 400ms var(--ease-out-soft) both; }
+@keyframes vt-out { to { opacity: 0; } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+```
+
+For finer control than a single root crossfade, assign a `view-transition-class` to a group of elements (cards in a grid, gallery images) and animate the class once rather than naming each element. Use `:active-view-transition` to scope styles that should apply only while a transition is running. Give the fixed nav its own `view-transition-name` so it stays put while the content swaps.
+
+```css
+:root::view-transition-group(.card) { animation-duration: 300ms; }
+```
+
+Reduced motion turns transitions off:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+}
+```
+
+In Next.js App Router, use the `next-view-transitions` package for client work. The official `experimental.viewTransition` flag with React's `<ViewTransition>` component is available but still experimental, so reserve it for projects that accept experimental flags.
+
+---
+
+## Parallax, used sparingly
+
+One or two moments per page maximum. Never on mobile. Never on text, only images and background elements. Prefer the CSS scroll driven version behind `@supports`, with a JavaScript hook fallback only where the effect must also run in Firefox. Every JavaScript path checks reduced motion and gates on `(hover: hover)` or width before running.
+
+```css
+@supports (animation-timeline: scroll()) {
+  .parallax-image {
+    animation: parallax-drift linear both;
+    animation-timeline: scroll(root);
+  }
+  @keyframes parallax-drift { from { transform: translateY(0); } to { transform: translateY(120px); } }
+}
+```
+
+---
+
+## Loading states
+
+No spinners, anywhere. An image uses a subtle shimmer sweep while loading. A navigation uses a thin 1px progress line at the top of the viewport in the accent color, scaling from left to right via `transform`.
+
+```css
+.image-skeleton {
+  background: linear-gradient(90deg, rgba(0,0,0,0.04) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.04) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+```
+
+The shimmer gradient is a loading affordance, not a decorative gradient, and is the one allowed exception to the no gradient rule.
+
+---
+
+## Long pages: content-visibility
+
+On marketing pages five screens or longer, add `content-visibility: auto` to below the fold sections so the browser skips their render work until they approach the viewport. Always pair with `contain-intrinsic-size` or scrollbars jump and anchor links break. Never apply it to the hero or anything above the fold.
+
+```css
+.section-deferred { content-visibility: auto; contain-intrinsic-size: auto 600px; }
+```
+
+---
+
+## Focus states
+
+Focus rings are visible and clean, never the default outline removed without a replacement. They animate in. The ring meets 3:1 contrast against its background.
+
+```css
+:focus-visible { outline: none; box-shadow: 0 0 0 0 var(--color-accent); animation: focus-ring-in 150ms var(--ease-out-soft) forwards; }
+@keyframes focus-ring-in { to { box-shadow: 0 0 0 2px var(--color-accent); } }
+```
+
+---
+
+## prefers-reduced-motion: granular, non negotiable
+
+Reduced motion does not mean no animation. It means no motion that can trigger vestibular disorders: large translations, parallax, zoom, spin, and the kinetic weight shift. Opacity fades and color transitions are safe and should survive. The blanket `* { animation-duration: 0.01ms }` reset is a blunt instrument that kills safe fades. The 2026 standard is opt in motion.
+
+**Pattern 1, preferred. Motion is added, never removed.** Write the static state as the default, add motion only inside the no preference query.
+
+```css
+.reveal { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .reveal { /* translateY entrances, parallax, scale, kinetic weight live here */ }
+}
+```
+
+**Pattern 2. Reduce, do not remove.** Swap movement for a fade under `reduce`.
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .hero-image, .animate-word-in, .display-kinetic {
+    animation: fade-only 300ms ease both; transform: none !important;
+  }
+  @keyframes fade-only { from { opacity: 0; } to { opacity: 1; } }
+}
+```
+
+**JavaScript animations** (count up, parallax, scroll linked) each check the preference before running.
+
+```ts
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+if (!prefersReduced) { /* run */ }
+```
+
+**Safety net, optional, the floor not the strategy.** A global override may ship as a final fallback. Keep 0.01ms rather than 0ms so `animationend` and `transitionend` still fire. If it is present, the granular patterns above must still be implemented. Never ship the net alone.
+
+---
+
+## What to never do
+
+- No colored drop shadows, on anything.
+- No bounce or elastic easing.
+- No scale above 1.0 on entrance (images may start at 1.04 and settle to 1).
+- No rotation animations except sidebar labels, which are already rotated statically.
+- No full page slide transitions.
+- No loading spinners. Shimmer or the progress line only.
+- No hover animation longer than 300ms.
+- No element starting at opacity 0 before JavaScript loads. Pure CSS or SSR safe initial states only.
+- No animating layout properties (width, height, margin, padding). Transform and opacity only.
+- No parallax on mobile.
+- No custom cursor. A circle chasing the pointer is decoration.
+- No animation library (Motion, GSAP) unless an effect is provably impossible in CSS, and never for entrances, hovers, or scroll reveals.
+- No more than three elements entering at once without stagger.
+- No kinetic type on more than one element, and never on body copy.
+- No blanket reduced motion kill switch as the only handling.
+
+---
+
+## Implementation checklist
+
+- [ ] Easing and duration tokens defined in `@theme`.
+- [ ] Page load staggers nav, headline, hero image, and CTA.
+- [ ] Rule lines draw via `transform`, not `width`.
+- [ ] Toggled content animates via `@starting-style` and `allow-discrete`, not JavaScript classes.
+- [ ] Menus and tooltips placed with anchor positioning, opened with the Popover API.
+- [ ] All hover images sit in an `overflow: hidden` wrapper.
+- [ ] CTA arrows slide on hover.
+- [ ] Scroll reveals: Intersection Observer baseline present, scroll driven version behind `@supports`.
+- [ ] Stat numbers count up with a reduced motion check.
+- [ ] At most one kinetic display headline, reduced motion gated.
+- [ ] Page transitions use the View Transitions API, nav excluded by its own name.
+- [ ] `content-visibility: auto` with `contain-intrinsic-size` on long below the fold sections.
+- [ ] Reduced motion handled granularly, JavaScript paths gated, safety net optional on top.
+- [ ] No colored shadows, no bounce easing, no custom cursor anywhere in the file.

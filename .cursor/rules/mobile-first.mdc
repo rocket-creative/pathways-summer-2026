@@ -1,0 +1,190 @@
+---
+description: Eastern Keel mobile pass. Run after desktop approval. Container queries, 360px floor, touch targets, viewport testing protocol. Use when adapting an approved desktop design for mobile.
+alwaysApply: false
+---
+
+# Eastern Keel | Mobile First Pass | 2026
+
+*Standards verified June 2026. Assumes Tailwind CSS v4 and Next.js 16.2 App Router. A legacy appendix for Tailwind v3 and Next 14 to 15 sits at the bottom.*
+
+## When to run this
+
+Run this after the desktop design is approved and the base site is built. This is a mobile pass, not a redesign. You are adapting an approved design to perform on the smallest screens your audience actually uses, then scaling up. Do not change the design intent. Adapt layout, spacing, and hierarchy.
+
+One structural change for 2026 makes this pass much smaller than it used to be. If components were built container query first during the desktop build (see the design language document), most of them already adapt to narrow space on their own. This pass then handles the page frame, the navigation, touch ergonomics, and the few components that still need viewport level decisions.
+
+---
+
+## The baseline devices
+
+**Design floor: 360px CSS viewport width.**
+
+The old "375px iPhone SE floor" is out of date. The SE was discontinued in February 2025 and no current iPhone is narrower than 390px. More to the point, Android's 360px workhorse width is the single most common narrow viewport worldwide, more common than any one iPhone width. If it works at 360px, it works everywhere.
+
+If a project's analytics are heavily US and iOS skewed, 375px is an acceptable floor, since a large installed base of SE and 12 and 13 mini devices still sit at 375px. When in doubt, build to 360px.
+
+| Device | CSS viewport width |
+|---|---|
+| Common Android (Galaxy A series and similar) | 360px |
+| iPhone SE 2 and 3, 12 and 13 mini (legacy, still in use) | 375px |
+| iPhone 17e, iPhone 12 to 16 standard | 390px |
+| iPhone 17 and 17 Pro | 402px |
+| Pixel and Galaxy flagships, iPhone 11 and XR class | 412px to 414px |
+| iPhone Air | 420px |
+| iPhone 16 and 17 Pro Max | 440px |
+
+**Target 360px. Test at 360px, 375px, 390px, 402px, and 440px before shipping.**
+
+---
+
+## Container queries: the primitive that changes this pass
+
+A component should respond to the width of the space it sits in, not the width of the browser window. A card in a wide hero and the same card in a narrow related list are the same component in different containers, and each should adapt itself. This removes most of the viewport breakpoint guesswork that mobile passes used to be made of.
+
+Mark the wrapper as a container, then query it:
+
+```css
+.card-frame { container-type: inline-size; container-name: card; }
+
+/* base: stacked, the narrow default */
+.card { display: grid; gap: var(--spacing-sm); }
+
+/* the card itself decides when it has room to go horizontal */
+@container card (min-width: 30rem) {
+  .card { grid-template-columns: 200px 1fr; }
+}
+```
+
+In Tailwind v4, the same logic is available through the container query variants. Mark the container with `@container` and prefix utilities with `@`:
+
+```html
+<div class="@container">
+  <article class="grid gap-4 @md:grid-cols-[200px_1fr]"> ... </article>
+</div>
+```
+
+The rule of thumb for this pass: anything reusable responds to its container, the page frame and the major section splits respond to the viewport.
+
+---
+
+## Viewport breakpoints for the page frame
+
+Tailwind is mobile first. Unprefixed utilities apply at all sizes. Prefixed utilities apply at that breakpoint and above. Use these only for the page frame and the big section splits, not for component internals.
+
+- no prefix: mobile, 360px and up. This is the base.
+- `sm:` 640px and up
+- `md:` 768px and up
+- `lg:` 1024px and up
+- `xl:` 1280px and up
+- `2xl:` 1536px and up
+
+Tailwind v4 configures breakpoints in CSS through the `@theme` block with `--breakpoint-*` variables, not in a config file. Adjust them there if a project needs custom stops.
+
+---
+
+## The mobile adaptation rules
+
+### Layout
+
+- The 60/40 and 70/30 desktop splits stack to a single column. The image takes the top, the text follows, or the reverse, whichever preserves the intent.
+- Section vertical rhythm compresses from 120px to 160px down to 56px to 80px. Keep it generous enough to breathe.
+- Gutters drop to a 20px to 24px page margin. Never let content touch the edge.
+- The image mosaic reduces to a two column asymmetric grid or a single column stack, never uniform tiles.
+
+### Type
+
+- Display type still bleeds and overlaps, but cap the fluid maximum so a headline does not overflow horizontally at 360px. The `clamp` minimums already protect the floor.
+- Keep `text-wrap: balance` on headings and `text-wrap: pretty` on body. Both matter more on narrow screens, where bad wrapping is most visible.
+- Body stays at 16px minimum. Never smaller, both for readability and to prevent the iOS zoom on input focus.
+
+### Navigation
+
+- The desktop nav collapses to a full screen overlay, not a sidebar drawer.
+- The trigger is a clear button with an accessible label, minimum 44px by 44px.
+- The overlay closes on Escape, traps focus while open, moves focus in on open, and returns focus to the trigger on close.
+- Animate it with `@starting-style` per the animation document.
+
+### Touch ergonomics
+
+- Touch targets: 44px by 44px production target. The WCAG 2.2 AA floor is 24px, so 44px clears it comfortably.
+- Spacing between adjacent targets so a thumb does not hit two.
+- Every phone number is a `tel:` link. Every email is a `mailto:` link.
+- A sticky bottom bar with a click to call or primary CTA on conversion pages, respecting safe area insets.
+
+### Forms on mobile
+
+- Input font size 16px minimum, always. This is the single most common cause of the iOS zoom on focus.
+- `field-sizing: content` on textareas so they grow with input rather than trapping text in a small scroll box.
+- `inputmode` and `autocomplete` set correctly (`inputmode="numeric"`, `autocomplete="tel"`, and so on) so the right keyboard appears.
+- Labels stay visible above the field. Never rely on a placeholder as the only label.
+
+### Viewport units and safe areas
+
+- Full height sections use `min-h-dvh` (dynamic viewport height), never `100vh`, which is wrong on mobile when the browser chrome shows and hides. Use `svh` and `lvh` where you specifically want the small or large viewport height.
+- Respect device safe areas on full bleed and sticky elements:
+
+```css
+.sticky-bar {
+  padding-bottom: max(var(--spacing-sm), env(safe-area-inset-bottom));
+}
+```
+
+- Set the viewport so content can use the full screen on notched devices, configured through the Next.js `viewport` export:
+
+```ts
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+```
+
+### Horizontal scroll: the cardinal sin
+
+No horizontal scroll at 360px, ever. The usual causes: a fixed width element wider than the viewport, an image without `max-width: 100%`, negative margins that are not contained, or a grid that does not wrap. Check at 360px specifically.
+
+---
+
+## Performance on real devices
+
+The mobile pass is where Core Web Vitals are won or lost, because the field data Google uses comes from mid range phones on real networks, not from a fast laptop.
+
+- The hero or LCP image loads with `loading="eager"` and `fetchPriority="high"`. Never lazy load the LCP image, it is the most common LCP regression there is.
+- Everything below the fold lazy loads, which is the `next/image` default.
+- Defer non critical JavaScript so it does not block the main thread during the first interactions. INP is a mobile problem first, since it measures responsiveness across the whole session on the device a real user holds.
+- Audit third party scripts. They commonly account for the majority of main thread time on commercial pages.
+- Targets at the 75th percentile, mobile field data: LCP at or under 2.5s, INP at or under 200ms, CLS at or under 0.1.
+
+---
+
+## The viewport testing protocol
+
+Before reporting any page complete, test it at each width and confirm:
+
+1. **360px:** no horizontal scroll, no overflow, no clipped text, no overlapping elements.
+2. **375px:** the legacy iPhone floor reads correctly.
+3. **390px:** the most common current iPhone width.
+4. **402px:** current iPhone Pro width.
+5. **440px:** the largest phone, where line lengths should not get awkwardly long before the tablet layout takes over.
+
+At each width check: nav opens, closes, traps and returns focus. Touch targets are 44px. The sticky bar respects the safe area. Images do not cause layout shift. The hero fills `dvh` correctly with browser chrome both shown and hidden.
+
+---
+
+## Legacy appendix: Tailwind v3 and Next 14 to 15
+
+If a project is still on Tailwind v3, the theme lives in `tailwind.config.ts` under `theme.extend`, not in an `@theme` block. Container query support requires the `@tailwindcss/container-queries` plugin rather than being built in. On Next 14 to 15, the image LCP control is the `priority` prop rather than the `loading` and `fetchPriority` pair. Everything else in this document applies unchanged. Do not mix v3 config and v4 `@theme` in one project.
+
+---
+
+## What to never do on mobile
+
+- No horizontal scroll at 360px.
+- No font size below 16px on inputs.
+- No `100vh` for full height sections. Use `dvh`.
+- No touch target under 44px.
+- No sidebar drawer nav. Full screen overlay only.
+- No lazy loaded LCP image.
+- No placeholder used as the only label.
+- No desktop hover effect that has no tap equivalent on a touch device.
+- No redesign. This is an adaptation of an approved desktop design.

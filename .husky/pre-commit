@@ -1,0 +1,1 @@
+node scripts/copy-lint.mjs && npm run build

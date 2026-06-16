@@ -1,0 +1,233 @@
+---
+description: SEO implementation. Run only after the audit report is approved. Highlights all new copy for human review. Use when implementing approved SEO audit changes.
+alwaysApply: false
+---
+
+# Eastern Keel | SEO Implementation | Run After Audit Approval | 2026
+
+*Standards verified June 2026. Pairs with the SEO Audit document of the same date. Run the audit first, get approval, then run this.*
+
+You are implementing the approved changes from the audit report. The codebase is already built. Brand, content, colors, and assets are in place.
+
+---
+
+## Highlighting rule, non negotiable
+
+Any content you add or modify that a human must review is wrapped in a highlight class. Use this exact pattern:
+
+```tsx
+<span className="bg-yellow-100 dark:bg-yellow-900/40">
+  [new or modified content here]
+</span>
+```
+
+**Highlight these:**
+- Any new copy: FAQ answers, author bios, medical review blocks, reference citations, heading rewrites.
+- Any alt text you write for an existing image.
+- Any schema value you populate from inference rather than confirmed source data, such as a phone number, address, or date you are not certain of.
+
+**Do not highlight:**
+- Code only changes: adding a JSON-LD block, fixing a missing aria-label on a known element, adding canonical tags.
+- Markup. Highlight content only.
+
+**Never invent data.** No fabricated reviews, ratings, credentials, certifications, or business facts. If a schema field or trust signal needs a value you cannot verify in the codebase or content, leave it out and list it under remaining gaps.
+
+---
+
+## Implementation order
+
+Execute in sequence. Note changes per phase.
+
+### Phase 1, metadata
+
+Use the App Router Metadata API. Shared values once in the root layout, per page values in each page's `metadata` export.
+
+```ts
+// app/layout.tsx
+import type { Metadata, Viewport } from 'next'
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://example.com'),
+  title: { default: 'Brand', template: '%s | Brand' },
+  description: '...',
+  openGraph: { siteName: 'Brand', type: 'website' },
+  twitter: { card: 'summary_large_image' },
+  robots: { index: true, follow: true },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+}
+```
+
+```ts
+// app/[page]/page.tsx
+export const metadata: Metadata = {
+  title: 'Primary Keyword Phrase',
+  description: '...',
+  alternates: { canonical: '/page-path' },
+  openGraph: { title, description, url: '/page-path', images: ['/og/page.jpg'] },
+  twitter: { title, description, images: ['/og/page.jpg'] },
+}
+```
+
+Rules: title roughly 50 to 60 characters, description roughly 150 to 160, both as truncation heuristics since Google truncates by pixel width and rewrites weak ones. Canonical absolute through `metadataBase`, self referencing, every page. No duplicate titles or descriptions. noindex on thank you and admin routes through per page `robots`. A true 404 needs no noindex. Fix any soft 404 returning 200. All OG and Twitter image URLs absolute.
+
+### Phase 2, schema and JSON-LD
+
+1. Add BreadcrumbList to all non homepage pages first.
+2. Add page specific schema per the audit.
+
+Rules: use `@id` for entity linking, link all entities back to the homepage Organization node, never add a property not reflected in visible content, no duplicate entity declarations. Do not add SearchAction (deprecated Nov 2024), HowTo (dead since 2023), or FAQPage expecting a rich result (dead for all sites since May 2026). FAQPage may be kept or added only as optional entity markup copied from visible Q&A, zero effort beyond that. Per Google's May 15, 2026 AI guide, none of this is required for AI Overviews or AI Mode, so implement schema for rich results and entity clarity, not as an AI surface lever.
+
+| Page type | Required schema |
+|---|---|
+| Homepage | Organization (@id, logo, sameAs, contactPoint), WebSite (no SearchAction) |
+| LocalBusiness or multi location | LocalBusiness or MedicalOrganization per location |
+| Service pages | Service (entity clarity, no rich result), BreadcrumbList |
+| Team or About | ProfilePage (single person pages), Person per member, Physician for medical staff |
+| Blog or Article | Article (datePublished ISO 8601, dateModified, author, publisher), BreadcrumbList |
+| Contact | LocalBusiness, BreadcrumbList |
+| Reviews shown | AggregateRating or Review matching visible data exactly |
+| Products | Product |
+| Events | Event |
+| All non homepage | BreadcrumbList minimum |
+| Unlisted page types | WebPage plus BreadcrumbList |
+
+### Phase 3, E-E-A-T
+
+Aligned with the September 2025 Quality Rater Guidelines. Trust paramount, YMYL expanded, AI assisted content held to the same bar.
+
+- Author attribution on all articles, the name linked to a bio page.
+- A medical review block on all clinical pages, "Medically reviewed by [Name], [Credentials]" plus "Last reviewed: [Date]", only with a real confirmed reviewer, otherwise flag for client input.
+- A numbered references section on all service and clinical pages linking to .gov, .edu, or peer reviewed sources with `rel="noopener noreferrer"`.
+- Trust signals near all CTAs, verified claims only.
+- Replace any generic attribution ("Admin", "Staff") with a real name or flag for client input.
+
+All new copy: highlight for review.
+
+### Phase 4, content, internal linking, and AI visibility
+
+Per Google's May 2026 guidance, no special generative engine markup exists. AI Overviews and AI Mode draw from the regular index. The work below is standard SEO that also feeds AI extraction:
+
+- Rewrite H2 and H3 as the user's question where missing. "Our Services" becomes "What services does [Brand] offer?".
+- The first one to two sentences under each question answer it directly. The strongest pattern is a two to four sentence answer to the page's core question above the fold.
+- Add FAQ sections (five to seven questions, two to four sentence answers) to service pages that lack them. The visible content is the value, the markup is optional per phase 2.
+- Add definitions for key terms, bullet lists and numbered steps for process content.
+- Add internal links: service pages to related service pages, blog posts to relevant service pages.
+- Add or verify visible date stamps on content pages.
+- Rename "IMG_1234" style image files to descriptive, keyword relevant names.
+- Where the page has original first hand data or a real case result, surface it clearly, since that is what an AI answer cites with confidence.
+- Do not add llms.txt. Do not chunk or rewrite content for AI.
+
+All new copy: highlight for review.
+
+### Phase 5, accessibility, WCAG 2.2 AA
+
+**Semantic and structure.** Fix heading hierarchy (one h1, no skipped levels). Add `<html lang>` if missing. Use the semantic landmark elements correctly. Add `aria-labelledby` to repeated landmark sections pointing to their heading id, native HTML first.
+
+**Keyboard and focus.** Add a skip link to `<main>` on every page. Add `focus-visible:ring-2` to all interactive elements, ring contrast 3:1. Ensure focus is not obscured by sticky headers (2.4.11). Ensure the mobile menu closes on Escape, moves focus in on open and returns it to the trigger on close. Fix keyboard traps. Where menus or selects were custom scripted and the audit recommended it, migrate to anchor positioning with the Popover API or the customizable `<select>` for native focus handling.
+
+**Forms.** Associate a `<label>` with every input. Announce error messages (`role="alert"` or `aria-live`). Mark required fields with `aria-required="true"`, not color alone.
+
+**Images.** Descriptive `alt` on content images, `alt=""` and `aria-hidden="true"` on decorative images. Highlight all inferred alt text.
+
+**Motion and color.** Implement `prefers-reduced-motion` granularly: disable or reduce to fade the motion triggering animations (translation entrances, parallax, zoom, the kinetic weight shift), plain fades may remain. A global 0.01ms override may ship only as a safety net on top of the granular pass, never as the sole handling. Fix contrast: 4.5:1 body, 3:1 large text and UI, in both modes where `light-dark()` is used. Ensure no information is conveyed by color alone.
+
+**WCAG 2.2 specific.** 2.5.7 dragging alternatives (AA), 2.5.8 target size 24px minimum and build to 44px (AA), 3.2.6 consistent help location (A), 3.3.7 no re-entry of session information (A), 3.3.8 accessible authentication alternative if a CAPTCHA is used (AA). Do not cite 4.1.1 Parsing (removed). Treat 2.4.13 Focus Appearance as AAA best practice.
+
+### Phase 6, technical SEO
+
+- Implement or verify `sitemap.ts` (App Router convention to `/sitemap.xml`), all public pages, no noindex pages.
+- Implement or verify `robots.ts`: disallow /admin, /api, staging, filtered or duplicate URLs, declare the sitemap.
+- AI crawler access (default yes): ensure robots.txt does not block OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot, Perplexity-User. Training bots (GPTBot, ClaudeBot, Google-Extended) follow the client's stated policy, ask rather than assume. Flag any CDN or WAF rule challenging these agents.
+- Fix redirect chains and canonical or redirect conflicts.
+- Convert all images to `next/image`, set `formats: ['image/avif', 'image/webp']` in next.config.
+- LCP image uses `loading="eager"` and `fetchPriority="high"`. Replace any deprecated `priority` prop.
+- Lazy load below the fold images (the `next/image` default).
+- Migrate fonts to `next/font`, preferring a single variable font file per family. If `next/font` is impossible, add manual metric adjusted `@font-face` fallbacks.
+- Add `tel:` links to every phone number.
+- Verify no console errors.
+- Targets at p75: LCP at or under 2.5s, INP at or under 200ms, CLS at or under 0.1, Lighthouse mobile 90 or above as a lab proxy. Verify the real numbers against PageSpeed Insights field data, since CrUX is what ranks.
+
+### Phase 7, conversion
+
+- Add a mobile sticky bar with click to call if missing.
+- Add trust signals adjacent to all CTAs, verified claims only, highlighted if newly written.
+- Verify AggregateRating schema matches visible review data exactly, remove it where reviews are not displayed.
+- Add an availability signal near booking CTAs if applicable.
+
+---
+
+## Copy rules for all new content
+
+- No hyphens in body copy. "wellbeing" not "well-being".
+- No hyphenated phone numbers. "(555) 123 4567".
+- No AI filler: never "dive into", "leverage", "utilize", "in order to", "it's important to note", "let's explore", "I'd be happy to".
+
+---
+
+## Output on completion
+
+Provide in this order:
+
+1. **Files changed**, every file with a summary of what changed.
+2. **Highlighted content for review**, every highlighted section, which page it is on, and why it needs human review.
+3. **Build verification**, run `npm run build`, confirm zero errors.
+4. **Remaining gaps**, anything unresolved: missing source content, images needing replacement, schema values awaiting client confirmation, training bot policy awaiting a client decision.
+
+---
+
+## Acceptance checklists, for the verify session
+
+Grade the completed work against these in a fresh session. The session that did the work is not the session that grades it. Report pass or fail per item with a file reference.
+
+**Metadata**
+- [ ] Every public page has a unique title and description.
+- [ ] Canonical present, absolute, self referencing on every page.
+- [ ] `metadataBase` set once in the root layout.
+- [ ] Viewport is its own export, not inside `metadata`.
+- [ ] OG and Twitter complete with absolute image URLs.
+- [ ] noindex on thank you and admin routes, no soft 404 served as 200.
+
+**Schema**
+- [ ] BreadcrumbList on every non homepage page.
+- [ ] Organization on the homepage with `@id`, all entities link back to it.
+- [ ] No SearchAction, no HowTo, no FAQPage shipped for rich results.
+- [ ] No schema property absent from visible content.
+
+**E-E-A-T**
+- [ ] Every article has a named author linked to a bio.
+- [ ] Clinical pages have a real medical review block or are flagged.
+- [ ] Service and clinical pages have a references section to authoritative sources.
+- [ ] No generic author attribution remains.
+
+**Content and AI**
+- [ ] Section headers are phrased as user questions where intent fits.
+- [ ] An answer first paragraph sits under each question header.
+- [ ] Service pages have a five to seven question FAQ.
+- [ ] Internal links connect service and blog pages.
+- [ ] Visible updated dates on content pages.
+- [ ] Retrieval bots are not blocked in robots.txt or at the CDN.
+
+**Accessibility**
+- [ ] One h1 per page, no skipped heading levels.
+- [ ] Skip link to `<main>` on every page.
+- [ ] Visible focus on all interactive elements, 3:1 ring contrast.
+- [ ] Mobile menu: Escape closes, focus moves in and returns.
+- [ ] All inputs labelled, errors announced, required fields not marked by color alone.
+- [ ] Contrast passes in both color modes.
+- [ ] Reduced motion handled granularly, not by a blanket switch alone.
+
+**Technical**
+- [ ] sitemap.ts and robots.ts present and correct.
+- [ ] AVIF first image config, `next/image` throughout, `sizes` set.
+- [ ] LCP image eager with high fetch priority, no deprecated `priority` prop.
+- [ ] Fonts through `next/font`, variable file preferred.
+- [ ] No console errors, no redirect chains, no canonical conflicts.
+- [ ] Field data confirms LCP, INP, and CLS in the good range at p75.
+
+**Copy**
+- [ ] No hyphens or dashes in body copy, no hyphenated phone numbers, no AI filler. The pre commit lint passed.

@@ -1,0 +1,196 @@
+---
+description: Read only SEO, accessibility, and structured data audit. Produces a report only, never edits files. Invoke manually with @seo-audit.
+alwaysApply: false
+---
+
+# Eastern Keel | SEO Audit | Read Only, No Changes | 2026
+
+*Standards verified June 2026. Key facts this revision pins down: Google published its official AI Optimization Guide on May 15, 2026, which states plainly that no special schema, llms.txt, or AI specific markup is needed for AI Overviews or AI Mode. FAQ rich results ended for all sites in May 2026. HowTo ended in 2023. Sitelinks search box ended Nov 2024. INP is 200ms. Core Web Vitals thresholds are unchanged. WCAG 2.2 AA is the audit target; the US ADA Title II deadlines were extended in April 2026 to April 26, 2027 (entities serving 50,000 or more) and April 26, 2028 (smaller entities).*
+
+You are an SEO, accessibility, and structured data auditor. Read this codebase. Make no changes. Produce a written audit report only. Await approval before any implementation.
+
+## Context
+
+This is a built Next.js 16.2, TypeScript, Tailwind v4, Vercel site. Brand, content, colors, and assets are already in place. Identify every gap against the standards below, then list the exact changes needed before approval.
+
+---
+
+## 1. Metadata, per page
+
+- **Title:** target roughly 50 to 60 characters as a truncation heuristic. Google truncates by pixel width, not character count, and rewrites weak titles, so there is no hard limit. Primary keyword early, brand appended through the title template. Flag boilerplate, half empty, or keyword stuffed titles, since those are the ones Google rewrites.
+- **Description:** target roughly 150 to 160 characters. Unique, accurate, self contained. Google rewrites most descriptions, so accuracy beats cleverness. Still worth doing well, since descriptions feed citation text on AI surfaces.
+- **Canonical:** absolute URL, self referencing, on every page. App Router: `alternates.canonical` plus `metadataBase` set once in the root layout. Never canonical to elsewhere combined with noindex.
+- No duplicate titles or descriptions across pages.
+- **Robots:** index and follow for public pages, noindex for thank you and admin routes. A true 404 does not need noindex, the status handles it. Flag any soft 404 served as a 200.
+- **Viewport:** configured through the `viewport` export, not inside `metadata`.
+- **OpenGraph:** og:title, og:description, og:url, og:siteName, og:type, og:image at 1200 by 630 with an absolute URL.
+- **Twitter:** twitter:card as summary_large_image, plus title, description, image.
+
+---
+
+## 2. Schema and JSON-LD, per page type
+
+All schema is JSON-LD in `<script type="application/ld+json">`. Use `@id` for entity linking. No duplicate entity declarations. Validate against schema.org types only. Never add a property not reflected in visible page content.
+
+**Frame schema correctly for 2026.** Google's May 15, 2026 AI guide confirms schema is not required for AI Overviews or AI Mode, and there is no AI specific schema to add. So treat structured data as two things: the path to rich results in traditional Search, and entity clarity that helps Google's Knowledge Graph understand who and what a page is. That entity clarity is connective tissue, not a direct lever on AI citation. Do not spend effort on markup whose only claimed payoff is an AI surface.
+
+**Deprecation status, flag anything chasing a dead rich result:** FAQ rich results ended for all sites in May 2026. HowTo ended Sept 2023. Sitelinks search box (SearchAction) ended Nov 2024. Also gone: Course Info, Claim Review, Estimated Salary, Special Announcement, Vehicle Listing (June 2025), and Q&A, Dataset, Practice Problems (Jan 2026). FAQPage and Service remain valid schema.org types and may stay for entity clarity and non Google consumers, but flag any effort spent on them expecting a Google rich result.
+
+| Page type | Required schema |
+|---|---|
+| Homepage | Organization (@id, logo, sameAs, contactPoint), WebSite (no SearchAction, deprecated) |
+| LocalBusiness or multi location | LocalBusiness or MedicalOrganization per location, with address, geo, openingHours, areaServed |
+| Service pages | Service (entity clarity only, no rich result), BreadcrumbList. FAQPage optional |
+| Team or About | ProfilePage where one person is the subject, Person per member, Physician for medical staff (medicalSpecialty, boardCertifications, hospitalAffiliations), which feeds knowledge panels |
+| Blog or Article | Article (headline, datePublished ISO 8601, dateModified, author Person, publisher linking to the Organization @id), BreadcrumbList |
+| Contact | LocalBusiness, BreadcrumbList |
+| Reviews shown on page | AggregateRating or Review markup matching the visible review data exactly |
+| Products | Product |
+| Events | Event |
+| All non homepage | BreadcrumbList minimum |
+| Page types not listed | WebPage plus BreadcrumbList as a baseline fallback |
+
+---
+
+## 3. E-E-A-T signals
+
+Aligned with the September 2025 Quality Rater Guidelines update. Trust remains paramount. YMYL now explicitly includes civic and election information. AI assisted content is judged by the same standard as any content.
+
+- Every article: a visible author name linked to a bio page.
+- Author bio pages carry credentials, qualifications, experience.
+- Healthcare and clinical pages: a "Medically reviewed by [Name], [Credentials]" block with a link, plus "Last reviewed: [Date]".
+- Clinical and service pages: a numbered references section linking to .gov, .edu, or peer reviewed sources with `rel="noopener noreferrer"`.
+- Trust signals near CTAs: credentials, certifications, insurance accepted, ratings. Only claims that are true and verifiable. Never fabricate.
+- No generic author attribution ("Admin", "Staff").
+
+---
+
+## 4. Content structure for Google and AI visibility
+
+Google's official position, confirmed in the May 15, 2026 AI guide: there is no special markup or generative engine trick. AI Overviews and AI Mode are built from the regular index, and standard SEO with genuinely helpful content is the path in. Google explicitly lists llms.txt, content chunking, and AI specific rewriting as things you do not need. At the same time, AI Overviews appear at large scale and cut organic click through roughly in half on affected queries, and citation studies reward the same structural habits. The competitive objective has shifted from ranking first to being the source the AI answer cites. The structural work that earns that is also just good SEO:
+
+- H2 and H3 headers written as the question the user asked. "What services does [Brand] offer?" not "Our Services".
+- The first one to two sentences after each header answer the question directly. Answer first, elaborate after. Answer first extraction is what AI surfaces quote, and the strongest pattern is a two to four sentence direct answer to the page's core question placed above the fold.
+- An FAQ section on every service page, five to seven questions matching "People Also Ask" intent, answers two to four sentences. The visible content is the value. The FAQPage markup is optional since rich results ended.
+- Definitions for key terms, which AI systems pull.
+- Bullet lists and numbered steps for process content.
+- Internal linking: every service page links to related pages, blog posts link to relevant service pages.
+- Original first hand insight. A page with first hand data, a real case study, or a specific practitioner conclusion gives an AI answer something to cite with confidence. Generic roundups rarely earn citations regardless of ranking.
+- NAP and brand description consistent across the site and major profiles. Brand mentions across the web correlate with AI citation more strongly than backlinks do.
+- Visible updated dates on content pages. Freshness is weighted heavily by Perplexity and ChatGPT search.
+- Descriptive image file names, never "IMG_1234".
+
+**AI crawler access, audit and do not change:**
+
+- robots.txt must not block retrieval bots if AI visibility is wanted: OAI-SearchBot and ChatGPT-User (OpenAI), Claude-SearchBot and Claude-User (Anthropic), PerplexityBot and Perplexity-User. Training bots (GPTBot, ClaudeBot, Google-Extended) are a separate client policy decision, and blocking Google-Extended does not affect Google Search rankings.
+- Check the CDN and WAF layer (Vercel firewall, Cloudflare bot rules). A large share of sites block AI crawlers there by accident. Flag any challenge or block rule hitting the agents above.
+- Confirm the site is indexable in Bing, since ChatGPT search still leans on Bing's index. Flag if Bing Webmaster Tools is not set up.
+- llms.txt: not recommended. Google says to ignore it and major crawlers do not honor it. Flag time spent on it as wasted, with the one exception of developer documentation sites.
+
+**Measurement note for the report:** AI Overviews and AI Mode are folded into overall Search traffic in Search Console. Recommend the client segment by query type and watch for the pattern of impressions rising while click through falls, which is the signature of an AI Overview intercepting clicks above their result.
+
+---
+
+## 5. Accessibility, WCAG 2.2 AA audit target
+
+**Legal context, state it correctly in the report.** WCAG 2.2 is the current W3C Recommendation and the right audit target. The laws point mostly at 2.1 AA or older: US ADA Title II for public entities is WCAG 2.1 AA, with deadlines extended in April 2026 to April 26, 2027 (entities serving 50,000 or more) and April 26, 2028 (smaller). The European Accessibility Act, in force since June 28, 2025 for private sector e-commerce, banking, and similar serving EU consumers, points at EN 301 549, currently WCAG 2.1 AA and being updated toward 2.2. Section 508 is WCAG 2.0 AA. Auditing to 2.2 AA covers all of these. WCAG 3.0 is still a working draft and is not referenced in any law. Ignore it.
+
+**Perceivable**
+- All images have descriptive alt text. Decorative images use `alt=""` and `aria-hidden="true"`.
+- Color contrast: 4.5:1 for body text, 3:1 for large text and UI components. Where `light-dark()` theming is used, check both modes.
+- Video captions where video exists.
+- No information conveyed by color alone.
+
+**Operable**
+- Keyboard reachable and operable for every interactive element.
+- A skip link to `<main>` at the top of every page.
+- The mobile menu closes on Escape, moves focus in on open and returns it on close.
+- Focus visible on all interactive elements, ring contrast 3:1.
+- Focus not obscured by sticky headers (2.4.11, AA).
+- Touch targets 24px minimum (2.5.8, AA), production target 44px.
+- No keyboard traps. Note that anchor positioned menus and the customizable `<select>` provide native focus handling, which is a point in their favor, but still verify the keyboard path.
+
+**Understandable**
+- Heading hierarchy h1 to h2 to h3, no skipped levels, one h1 per page.
+- Every form input has an associated `<label>`.
+- Error messages announced to screen readers.
+- Required fields marked, not by color alone.
+- `<html lang>` declared.
+
+**Robust**
+- Semantic HTML: `<main>`, `<nav>`, `<header>`, `<footer>`, `<section>`, `<article>`, `<aside>` used correctly.
+- Repeated landmarks carry `aria-labelledby` pointing to their heading id. Native elements first, ARIA only where HTML semantics fall short.
+- No ARIA that contradicts a native role.
+- `prefers-reduced-motion` handled granularly. Motion triggering animations (translation, parallax, zoom, the kinetic weight shift) disabled or reduced to fades. A blanket global kill switch alone is flagged as insufficient.
+- Do not cite 4.1.1 Parsing, removed in WCAG 2.2.
+
+**WCAG 2.2 criteria to check, with correct levels**
+- 2.4.11 Focus Not Obscured (Minimum), AA
+- 2.5.7 Dragging Movements, AA
+- 2.5.8 Target Size (Minimum), AA, 24px floor
+- 3.2.6 Consistent Help, Level A
+- 3.3.7 Redundant Entry, Level A
+- 3.3.8 Accessible Authentication (Minimum), AA
+- 2.4.13 Focus Appearance is AAA. Note as best practice, not an AA failure.
+
+---
+
+## 6. Technical SEO
+
+- XML sitemap at `/sitemap.xml` through the App Router `sitemap.ts` convention. All public pages, no noindex pages.
+- `robots.txt` through `robots.ts`: disallow /admin, /api, staging and filtered or duplicate URLs, declare the sitemap, verify the AI crawler policy from section 4.
+- Clean URLs, no query params on main pages.
+- Breadcrumb navigation on all non homepage pages.
+- HTTPS enforced.
+- No console errors on any page.
+- No redirect chains (301 to 301 to final).
+- No canonical or redirect conflicts.
+- Images: AVIF first with WebP fallback (`formats: ['image/avif', 'image/webp']`), descriptive file names, lazy loaded below the fold, `next/image` throughout, `sizes` defined.
+- LCP image uses `loading="eager"` and `fetchPriority="high"`. Flag any use of the deprecated `priority` prop on Next 16.
+- Fonts loaded through `next/font`, self hosted, `font-display: swap`, automatic size adjusted fallback metrics for zero font swap layout shift. Flag any external font CSS or manual `@font-face` without size adjusted fallbacks. Prefer a single variable font file per family over multiple static weights.
+- Core Web Vitals at the 75th percentile: LCP at or under 2.5s, INP at or under 200ms, CLS at or under 0.1. INP replaced FID in 2024. Do not use the old 100ms FID number.
+- Lighthouse is a diagnostic, not the score that ranks. The ranking signal is field data from CrUX. Use Lighthouse to find issues, then verify against PageSpeed Insights field data. Target 90 or above on mobile as a lab proxy.
+- Mobile: responsive, no horizontal scroll at 360px, touch targets 44px.
+- Click to call: every phone number is a `tel:` link on mobile.
+
+**2026 platform items to check.** These are newer than most audit templates and are easy wins:
+- `text-wrap: balance` on headings and `text-wrap: pretty` on body. Flag pages where headlines drop orphan words or body has single word last lines.
+- Reusable components use container queries rather than viewport breakpoints for their internal layout, which reduces layout shift across contexts.
+- Menus, tooltips, and dropdowns use anchor positioning and the Popover API or a customizable `<select>`, not a scripted custom widget, which improves the keyboard and focus story.
+- `field-sizing: content` on textareas.
+
+---
+
+## 7. Conversion
+
+- Phone number as a clickable `tel:` link near every CTA.
+- Trust signals adjacent to CTAs, verified claims only.
+- A mobile sticky bar with click to call.
+- AggregateRating schema only where reviews are actually displayed and match.
+- An availability signal near booking CTAs.
+
+---
+
+## 8. Copy rules, for any new content written
+
+- No hyphens in body copy. "wellbeing" not "well-being".
+- No hyphenated phone numbers. "(555) 123 4567" not the hyphenated form.
+- No AI filler: never "dive into", "leverage", "utilize", "in order to", "it's important to note", "let's explore", "I'd be happy to".
+
+---
+
+## Audit output format
+
+Produce the report in this exact order.
+
+**1. Baseline scores.** Lighthouse per key page if the CLI is available, count of pages missing metadata, count missing schema, accessibility violation count, AI crawler access status (robots.txt plus CDN and WAF check).
+
+**2. Page by page gap list.** For every page, every missing or incorrect item against the standards above, specific. Examples: "Homepage: og:image missing". "Services/tms: no answer first paragraph under the H2 questions". "About: author bio has no credentials". "next.config: image formats not set to AVIF first".
+
+**3. Content gaps.** Pages where new copy must be written (FAQ answers, author bios, medical review blocks, reference sections). Flag clearly, since these require human review before going live.
+
+**4. Stale practice flags.** Anything chasing a deprecated feature: FAQPage or HowTo markup expecting rich results, SearchAction, llms.txt, the `priority` prop on Next 16, FID references, a blanket reduced motion override as the only handling.
+
+**5. Proposed changes list.** A numbered list of every change the implementation prompt will make. No implementation yet.
+
+**Await approval before proceeding. Do not write any code. Do not edit any files. Report only.**

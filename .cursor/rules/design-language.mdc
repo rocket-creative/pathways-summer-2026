@@ -1,0 +1,417 @@
+---
+description: Eastern Keel visual design language. Editorial fashion aesthetic, variable type, anti AI tells, Tailwind v4 tokens, canonical layout patterns. Use for any UI, component, page, or styling work.
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.css"
+  - "app/**"
+  - "components/**"
+alwaysApply: false
+---
+
+# Eastern Keel | Visual Design Language | 2026
+
+*Standards verified June 2026. Assumes Tailwind CSS v4 and Next.js 16.2 App Router. Read this before any UI, component, page, or styling work.*
+
+## Before you begin
+
+Read the codebase first. If a brand palette already exists in an `@theme` block, in CSS variables, or in a legacy `tailwind.config`, use it. Do not invent colors. If nothing is defined, ask:
+
+```
+What are your brand colors and typefaces?
+1. Primary color (hex or oklch)
+2. Accent color (hex or oklch)
+3. Background (default: warm off white)
+4. Text (default: near black, never pure #000000)
+5. Display typeface and body typeface, if chosen
+
+Defaults if undefined:
+- Background: #F5F4F0 (warm off white)
+- Text: #1A1A1A (near black)
+- Accent: supplied by you
+- Display type: a variable grotesque or a high contrast variable serif
+- Body type: the same family at a text optical size, or a neutral companion
+```
+
+---
+
+## Design philosophy
+
+Confident, quiet, editorial. Every layout decision is structural. Nothing is decorative. The page reads like a magazine spread, not a website template. Photography carries the visual weight. Typography is the architecture. White space is not empty. It is the design.
+
+The reference aesthetic is high end fashion editorial meeting Swiss graphic design. Bold display type as a graphic element. Photography first. Thin rule lines as structure. Rotated sidebar text. Arrows as functional navigation markers, never decoration.
+
+One shift for 2026: type is allowed to behave, not only sit. Variable fonts let a headline carry hierarchy through weight and optical size from a single file, and let one expressive display moment per page shift its weight as the reader arrives. This stays inside the rule that nothing is decorative, because the motion is structural and earns its place. It is covered in the animation document, referenced here so the type choices anticipate it.
+
+---
+
+## Typography
+
+Typography is the largest change in this revision. The old approach loaded several static weight files. The 2026 approach is one variable font, with hierarchy expressed through its axes.
+
+### Variable fonts are the infrastructure
+
+Load one variable font per family. A variable font ships every weight and, where the face supports it, optical size and width, inside a single file. This is lighter than loading four static weights, and it lets headings and body share one face while reading correctly at every size, because the optical size axis thickens hairlines and opens spacing at small sizes and refines them at display sizes.
+
+- Display and headings: a variable grotesque (Inter, GT America, Bricolage Grotesque) or, for a sharper editorial voice, a high contrast variable serif. The expressive serif revival suits the magazine aesthetic and reads as intentional rather than default.
+- Body: the same family at its text optical size, or a single neutral companion. Never exceed two families.
+- Load through `next/font`. It self hosts the file, so there is no external font request, applies `font-display: swap`, and generates a metric matched fallback so the swap causes zero layout shift.
+
+```ts
+// app/fonts.ts
+import localFont from 'next/font/local'
+
+export const display = localFont({
+  src: './fonts/BrandVariable.woff2', // a single variable file
+  variable: '--font-display',
+  display: 'swap',
+  weight: '100 900',           // the full weight axis range
+})
+```
+
+Drive weight through the axis, not separate files:
+
+```css
+.h1 { font-weight: 680; }      /* any value in the axis range, not only 400/700 */
+.lead { font-weight: 360; }
+```
+
+If the face exposes optical size, set it explicitly at the extremes rather than trusting `auto`:
+
+```css
+.display { font-variation-settings: "opsz" 144; }  /* display cut */
+.body    { font-variation-settings: "opsz" 16; }   /* text cut */
+```
+
+### Line wrapping is now the platform's job
+
+Two properties replace manual line breaking and are widely available in 2026. Use both. They are the cheapest quality upgrade in this entire system.
+
+- `text-wrap: balance` on display type, headings, and short blockquotes. It evens ragged lines so a headline does not drop one orphan word onto its own line. Apply only to short text, since the browser caps how many lines it balances.
+- `text-wrap: pretty` on body copy. It prevents single word last lines and short orphans across whole paragraphs without the cost of full balancing.
+
+```css
+h1, h2, h3, .display, blockquote { text-wrap: balance; }
+p, li, .body { text-wrap: pretty; }
+```
+
+### Scale
+
+- Display and hero: clamp(64px, 10vw, 160px). Architectural scale. Often bleeds off a screen edge or overlaps imagery.
+- H1: clamp(40px, 6vw, 96px)
+- H2: clamp(24px, 3.5vw, 48px)
+- Body: 16px to 17px, line height 1.65 to 1.75
+- Caption, label, meta: 11px to 12px, tracking 0.08em to 0.12em, uppercase or small caps
+- Sidebar rotated label: 11px to 12px, letter spacing 0.1em, uppercase, rotated 90deg or 270deg
+
+Fluid sizes use the theme text tokens. Root relative units (`rch`, `rcap`, `rex`, `ric`) are now available if you want sizing that tracks the root font, but `clamp` with viewport units remains the house default for fluid display type.
+
+### Behavior
+
+- Display type may overlap photography. Intentional.
+- Display type may bleed off the right or bottom edge. Intentional.
+- Never center body text.
+- Headlines are left aligned or intentionally asymmetric.
+- No text shadows over photography. Darken the image with an opacity overlay instead.
+- No hyphens in copy, ever. Do not enable `hyphens: auto`.
+- Avoid justified text. Ragged right with `text-wrap: pretty` reads better.
+
+---
+
+## Color
+
+- Use brand colors as provided or read from the codebase.
+- Neutral first. Backgrounds are off white, warm white, or true white. Never gray blue, never cold.
+- Accent is sparing. At most 15 to 25 percent of any layout.
+- Color blocks are structural. A full bleed accent panel replaces a section. It is not a card background.
+- Near black sections with reversed white type are the contrast moments: footer, feature callout, stat block.
+- No gradients, anywhere.
+- No drop shadows. One exception, a very subtle shadow on a floating UI element only: `0 2px 8px rgba(0,0,0,0.06)`.
+- Thin rule lines (`#E0DED8` or 10 percent black) divide structure. Never as a box around a card.
+
+### House color format and derivation
+
+Define brand colors in `oklch`. It is what Tailwind v4 uses internally, and it interpolates cleanly, so a tint reads as the same hue rather than drifting muddy. Hex values from a brand sheet can be pasted as is.
+
+Derive tints and shades with `color-mix` instead of hardcoding a second swatch. One brand token then generates its own hover and muted states, and a brand change updates everything downstream:
+
+```css
+.btn-solid:hover { background: color-mix(in oklch, var(--color-accent), black 10%); }
+.surface-muted  { background: color-mix(in oklch, var(--color-accent), white 88%); }
+```
+
+### Theming with light-dark
+
+If the project supports a dark mode, prefer the `light-dark()` function over duplicated class trees. Declare `color-scheme` once and let each token resolve:
+
+```css
+:root { color-scheme: light dark; }
+
+@theme {
+  --color-background: light-dark(#F5F4F0, #0A0A0A);
+  --color-text:       light-dark(#1A1A1A, #F2F1EC);
+  --color-rule:       light-dark(#E0DED8, rgba(255,255,255,0.14));
+}
+```
+
+This is cleaner than a `dark:` variant on every element and keeps the contrast moments coherent across modes. Reserve `dark:` variants for the few places a token cannot express the change.
+
+---
+
+## Layout
+
+### Grid
+
+- Max content width: 1440px. Internal content max: 1280px with auto margins.
+- Twelve column base, but layouts use asymmetric splits often: 60/40, 70/30, 40/60.
+- Gutters: 24px minimum, 40px preferred.
+- Section rhythm: 80px minimum between sections, 120px to 160px preferred on desktop.
+
+### Container queries are the component responsiveness primitive
+
+This is the second large change for 2026. A component should respond to the space it sits in, not to the viewport. A feature card in a wide hero and the same card in a narrow sidebar should adapt themselves, with no viewport breakpoint guessing which context they are in. Mark a wrapper as a container and query it:
+
+```css
+.card-frame { container-type: inline-size; container-name: card; }
+
+@container card (min-width: 30rem) {
+  .card { grid-template-columns: 200px 1fr; }
+}
+```
+
+Viewport breakpoints still set the page frame and the major column splits. Container queries handle everything reusable. Build new components container query first, and the mobile pass becomes far smaller.
+
+### Subgrid for editorial alignment
+
+When grid items contain their own rows (image, then headline, then caption) and those rows must line up across a mosaic or a magazine spread, use `subgrid` so the inner rows inherit the parent tracks. It removes the fragile fixed heights that used to force alignment:
+
+```css
+.mosaic { display: grid; grid-template-columns: repeat(12, 1fr); }
+.mosaic-item { display: grid; grid-template-rows: subgrid; grid-row: span 3; }
+```
+
+### Canonical layout patterns
+
+Use these. Do not invent generic ones.
+
+- **Split hero 60/40 or 70/30.** Full viewport height (`min-h-dvh`). Left: display text and a single CTA. Right: full bleed photography. No card, no box, no border. The image is the right half of the viewport.
+- **Editorial stack.** Full width image, display headline overlapping the bottom of the image, body below on white. The image bleeds edge to edge.
+- **Image mosaic.** Asymmetric grid of three to five images at different sizes. One dominates. No equal thumbnails. Gap 8px to 12px. No rounded corners. Subgrid for caption alignment.
+- **Magazine spread.** Two columns mimicking print. Left: a large number or display word as structure. Right: photography and caption. Or invert.
+- **Product or feature grid.** Four columns on desktop, two on mobile, but vary weight rather than tiling uniform cards. Image above, minimal label below. No border, no shadow. Hover scales the image to 1.02 only.
+- **Stat or pull quote block.** Full width near black section. A large number or short quote at display scale. Small caption. One thin rule above and below. No icons.
+
+---
+
+## Structural details
+
+### Thin rule lines
+
+1px lines in `#E0DED8` or `rgba(0,0,0,0.10)` to separate nav items, frame a section with a top rule only (not a box), divide caption from image, or structure multi column text. Never a decorative border around a component.
+
+### Rotated and sideways text
+
+For vertical section labels along a left edge, category indicators, or column identifiers. Hidden on mobile (see the mobile document).
+
+```css
+.sidebar-label {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+```
+
+### Arrows
+
+Arrows are functional navigation and direction, never decoration. Use them for next section indicators, CTA links (the arrow replaces "click here"), carousel controls, pagination, and breadcrumb separators. Thin SVG or CSS drawn, never emoji, never an icon library glyph, never a fat chevron or a filled head.
+
+```tsx
+// components/ui/Arrow.tsx
+export const Arrow = ({ direction = 'right' }: { direction?: 'right' | 'left' | 'down' }) => (
+  <svg width="32" height="12" viewBox="0 0 32 12" fill="none"
+       stroke="currentColor" strokeWidth="1" aria-hidden="true">
+    {direction === 'right' && (<><line x1="0" y1="6" x2="30" y2="6" /><polyline points="24,1 30,6 24,11" /></>)}
+    {direction === 'left'  && (<><line x1="32" y1="6" x2="2" y2="6" /><polyline points="8,1 2,6 8,11" /></>)}
+    {direction === 'down'  && (<><line x1="16" y1="0" x2="16" y2="10" /><polyline points="11,5 16,11 21,5" /></>)}
+  </svg>
+)
+```
+
+```tsx
+<a className="cta-link">View all services <Arrow direction="right" /></a>
+```
+
+---
+
+## Component patterns
+
+### Navigation
+
+Horizontal, full width, 1px bottom rule. Logo left, links right, or centered with the logo above on editorial layouts. Links at 12px to 13px, uppercase, tracking 0.08em. No background fill in the default state. Transparent over the hero, white on scroll with the 1px rule appearing on scroll. Mobile opens a full screen overlay, not a sidebar drawer.
+
+### Hero
+
+Always full viewport height (`min-h-dvh`). Photography fills the frame, no box, no container. The headline sits on the image or splits 60/40 beside it. One CTA: a text link with an arrow, or a ghost button.
+
+### Buttons
+
+Two styles only.
+
+1. **Ghost:** 1px border, no fill, text and an optional arrow. Hover fills with the accent or near black and inverts the text.
+2. **Solid:** accent or near black fill, white text, radius 0 to 2px. Hover darkens 10 percent via `color-mix`.
+
+No pill buttons. No radius beyond 2px. No gradient fill. No shadow. Minimum height 44px for touch.
+
+### Forms and inputs
+
+- 1px bottom border only. Underline style, no full box border, radius 0.
+- Label above the input at 11px uppercase, tracking 0.08em.
+- Focus transitions the border to the accent or near black.
+- Error state uses a brand palette color, never the default browser red unless the brand defines it.
+- Input font size 16px minimum. This prevents the iOS zoom on focus.
+- `field-sizing: content` on text inputs and textareas, so a field grows to fit what is typed instead of scrolling inside a fixed box. It keeps the underline aesthetic intact while removing the cramped single line textarea.
+
+```css
+input[type="text"], input[type="email"], textarea {
+  field-sizing: content;
+  min-height: 2.75rem;
+}
+```
+
+### Selects, menus, tooltips, popovers
+
+Two platform features now remove the JavaScript that used to position and manage these. Reach for them before any library.
+
+**Customizable select.** With `appearance: base-select`, a native `<select>` can be styled to match the underline aesthetic and can hold richer option content, while keeping native keyboard navigation, focus return, and the picker that the platform positions for you. Use it for editorial dropdowns rather than a scripted custom select.
+
+**Anchor positioning** tethers a popover, menu, or tooltip to its trigger in pure CSS, with an automatic fallback position so it never overflows the viewport. Pair it with the Popover API, which handles open, close, light dismiss, and focus, so a menu needs no positioning JavaScript at all:
+
+```css
+.menu-trigger { anchor-name: --menu; }
+
+.menu {
+  position: absolute;
+  position-anchor: --menu;
+  top: anchor(bottom);
+  justify-self: anchor-center;
+  position-try-fallbacks: flip-block, flip-inline;  /* stay on screen */
+}
+```
+
+```html
+<button popovertarget="menu" class="menu-trigger">Menu</button>
+<nav id="menu" popover class="menu"> ... </nav>
+```
+
+The entrance and exit animation for these lives in the animation document, using `@starting-style`. Anchor positioning places them. The Popover API opens them. `@starting-style` animates them. None of it needs a positioning library.
+
+### Cards
+
+Use sparingly. Prefer open layouts. No radius beyond 4px. No shadow. No background fill in light sections, let the image be the card. If a background is needed, a 1px `#E0DED8` border. The image is full bleed at the top with no radius.
+
+### Images
+
+- `next/image` always, with real `alt` text.
+- No radius on editorial images, ever. No shadow.
+- Aspect ratios: 3:4 portrait, 16:9 landscape, 1:1 grid, 4:5 product. `object-fit: cover` always.
+- Hover on a linked image: scale 1.02, 400ms, image only, never the container.
+- The LCP or hero image uses `loading="eager"` and `fetchPriority="high"`. Next.js 16 deprecated the `priority` prop in favor of `preload`, so prefer the eager and fetchPriority pair.
+- AVIF first with WebP fallback, configured site wide in `next.config`.
+
+---
+
+## Theme tokens, Tailwind v4 CSS first
+
+All tokens live in one `@theme` block in the global stylesheet. Tailwind v4 generates the matching utilities automatically (`--color-accent` becomes `bg-accent` and `text-accent`, `--spacing-section` becomes `py-section`) and the variables are also plain CSS variables everywhere.
+
+```css
+/* globals.css */
+@import "tailwindcss";
+
+:root { color-scheme: light dark; }
+
+@theme {
+  /* Brand colors, replace with client values */
+  --color-background: light-dark(#F5F4F0, #0A0A0A);
+  --color-text: light-dark(#1A1A1A, #F2F1EC);
+  --color-text-secondary: oklch(0.55 0 0);
+  --color-accent: /* brand accent in oklch */;
+  --color-rule: light-dark(#E0DED8, rgba(255,255,255,0.14));
+
+  /* Spacing */
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 40px;
+  --spacing-xl: 64px;
+  --spacing-2xl: 96px;
+  --spacing-section: clamp(80px, 10vw, 160px);
+
+  /* Fluid type scale */
+  --text-display: clamp(64px, 10vw, 160px);
+  --text-display--line-height: 1.0;
+  --text-h1: clamp(40px, 6vw, 96px);
+  --text-h1--line-height: 1.1;
+  --text-h2: clamp(24px, 3.5vw, 48px);
+  --text-h2--line-height: 1.2;
+
+  /* Fonts, wired to next/font variables */
+  --font-display: var(--font-display), system-ui, sans-serif;
+  --font-body: var(--font-body), system-ui, sans-serif;
+}
+```
+
+A v3 project keeps `tailwind.config.ts` with `theme.extend`. Do not mix the two systems. The target state is everything in `@theme`.
+
+---
+
+## The AI giveaways, never ship these
+
+A site built well under this system is unidentifiable as machine assisted. The copy rules handle the writing tells. These are the visual tells that mark a page as AI generated, and every one is banned:
+
+- **Purple to blue or indigo to violet gradients.** The default startup builder hero. No gradients exist in this system at all, so it is already covered, but it is the single most common tell, so it is named first and explicitly.
+- **Gradient text.** A headline is a solid color, never a clipped gradient fill.
+- **Glassmorphism.** No frosted translucent cards, no backdrop blur panels floating over a busy background.
+- **Mesh, aurora, or blob backgrounds.** No soft colored orbs drifting behind content.
+- **Bento grids of uniform rounded cards.** Vary size and weight, square the corners, let photography and type carry the structure.
+- **The generic three column feature row:** an icon, a heading, one line, repeated three times. If features are shown they are editorial, asymmetric, and photography led.
+- **Sparkle or star AI icons, gradient pills, glow effects.** None.
+- **Centered everything:** a centered hero with a centered eyebrow, centered subhead, and a centered button. The house aesthetic is left aligned and asymmetric.
+- **Default shadcn, Chakra, or Material shipped unrestyled.** The primitives are fine. The default skin is a tell.
+- **Emoji anywhere in the UI.**
+- **Rounded corners on everything.** Radius is 0 to 4px, never the soft 12 to 24px that templates default to.
+- **Glowing or colored shadows.** Shadows are near absent and never tinted.
+
+The test: if a screenshot of the page could be mistaken for a generic template or an AI builder's default output, it has failed. The page reads as a designed editorial object with a point of view, or it is not done.
+
+---
+
+## What to never do
+
+- No gradients, anywhere.
+- No colored drop shadows.
+- No radius above 4px on editorial elements (buttons 2px max, inputs 0).
+- No uniform equal size card grids. Vary size and weight.
+- No stock illustration or icon heavy UI.
+- No centered body text.
+- No hyphens in copy. No `hyphens: auto`.
+- No display heading shipped without `text-wrap: balance`, no body paragraph without `text-wrap: pretty`.
+- No generic centered hero on a blurred background image.
+- No navbar with a colored background in the default state.
+- No emoji in UI.
+- No decorative dividers (wavy lines, illustrated separators).
+- No component library used out of the box without restyling to this system (no default shadcn, no default Chakra).
+- No more than two typeface families.
+- No separate static font files where one variable file covers the range.
+- No custom cursor. The system cursor is the cursor.
+- No JavaScript positioning library for menus or tooltips where anchor positioning and the Popover API do the work.
+- No AI filler copy ("dive into", "leverage", "utilize", "seamless", "robust", "innovative").
+
+---
+
+## Output expectation
+
+Every component and page section should look like it belongs in a high end print magazine translated to the web, not assembled from a UI library. The grid breathes. The type is the hero when the photo is not, and it carries its hierarchy from one variable file. The lines are thin and intentional. The arrows are thin and directional. Nothing is round. Nothing is soft. Nothing is decorative.

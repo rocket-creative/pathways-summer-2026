@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+description: Core Eastern Keel build rules, AI tell ban, and copy rules
+---
+# Eastern Keel core rules
+
+Stack: Next.js 16.2 App Router, TypeScript strict (never `any`), Tailwind v4 with the theme in an @theme block in globals.css, Supabase with RLS, Prisma, Vercel. Server render every route. Add `'use client'` only when a component needs interactivity.
+
+Six permanent design rules: no gradients anywhere; no drop shadows (one subtle floating UI exception, defined in the design rule); no border radius above 4px; no more than two typeface families; system cursor only, never a custom cursor; nothing decorative, every element is structural.
+
+No AI design tells, ever: no gradients of any kind, no gradient text, no glassmorphism, no mesh or blob backgrounds, no bento card grids, no generic three column icon rows, no glow, no centered hero, no emoji, no unrestyled component library skin. Output is left aligned, asymmetric, photography led, editorial. The full list is in the design language rule. If a screenshot could pass for a template or AI builder default, it failed.
+
+Copy rules, enforced by the pre commit lint: no hyphens in body copy, no em or en dashes anywhere in copy, no hyphenated phone numbers, no AI filler ("dive into", "leverage", "utilize", "seamless", "robust", "innovative", "in order to", "it's important to note", "let's explore").
+
+Process: plan before any new page or refactor. Run an SEO audit and its implementation in separate sessions. Run the build before reporting a task done.

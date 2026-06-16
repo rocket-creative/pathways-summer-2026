@@ -1,0 +1,211 @@
+// Pathways Within data model. Source of truth for the location pages and the
+// programmatic entity-space SEO surface that builds on top of them.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// A physical therapy office. The five Long Island locations.
+model Office {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  townName    String
+  displayName String
+  addressLine String
+  suite       String?
+  city        String
+  state       String   @default("NY")
+  zip         String
+  phone       String   @default("(631) 371 3825")
+  hasParking  Boolean  @default(true)
+  latitude    Float?
+  longitude   Float?
+  // napVerified is false when the source site disagreed with itself and the
+  // value still needs client confirmation. Drives the in page flag.
+  napVerified Boolean  @default(true)
+  napNote     String?
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clinicians   Clinician[] @relation("OfficeClinicians")
+  townsInRange Town[]      @relation("OfficeTownsInRange")
+}
+
+// A licensed clinician. Populated once the authoritative roster is supplied.
+model Clinician {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  credentials String?
+  title       String?
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  offices     Office[]     @relation("OfficeClinicians")
+  conditions  Condition[]  @relation("ClinicianConditions")
+  modalities  Modality[]   @relation("ClinicianModalities")
+  populations Population[] @relation("ClinicianPopulations")
+
+  // Medical review authorship (E-E-A-T) for clinical content.
+  reviewedConditions Condition[] @relation("ConditionReviewer")
+  reviewedModalities Modality[]  @relation("ModalityReviewer")
+  reviewedGuides     Guide[]     @relation("GuideReviewer")
+}
+
+// An accepted insurance payer. Used by location and insurance pages.
+model Insurer {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String   @unique
+  outOfNetwork Boolean  @default(false)
+  summary      String?
+  // Confirmed coverage copy required before a payer hub may index.
+  contentApproved Boolean @default(false)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// A clinical condition (the diagnosis or problem patients search for).
+model Condition {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  icd10          String?
+  summary        String?
+  body           String?
+  contentApproved Boolean @default(false)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinicians   Clinician[] @relation("ClinicianConditions")
+  reviewedById String?
+  reviewedBy   Clinician?  @relation("ConditionReviewer", fields: [reviewedById], references: [id])
+}
+
+// A treatment method (how clinicians treat).
+model Modality {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  summary        String?
+  body           String?
+  contentApproved Boolean @default(false)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinicians   Clinician[] @relation("ClinicianModalities")
+  reviewedById String?
+  reviewedBy   Clinician?  @relation("ModalityReviewer", fields: [reviewedById], references: [id])
+}
+
+// A population served (who the therapy is for).
+model Population {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  name           String
+  summary        String?
+  body           String?
+  contentApproved Boolean @default(false)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  clinicians Clinician[] @relation("ClinicianPopulations")
+}
+
+// A Long Island town within range of one or more offices. localDetail is the
+// real, unique unit of value required before a condition x town page may index.
+model Town {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  county      String?
+  localDetail String?
+  isOfficeTown Boolean @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  offices Office[] @relation("OfficeTownsInRange")
+}
+
+// A state where telehealth is offered. The licensure fence. licensed must be
+// true (NY, NJ, NC, FL) for any online-therapy page to index.
+model GeoState {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  code      String   @unique
+  licensed  Boolean  @default(true)
+  summary   String?
+  contentApproved Boolean @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  metros Metro[]
+}
+
+// A metro area inside a licensed state, gated to real search demand.
+model Metro {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  name      String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stateId String
+  state   GeoState @relation(fields: [stateId], references: [id])
+}
+
+// A Wellness (medspa) service from the sister practice Pathways Within
+// Wellness. Real marketing content, so these index once contentApproved.
+model WellnessService {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  name            String
+  // Groups services on the index (Massage, Energy Work, Skincare, etc.).
+  category        String?
+  summary         String?
+  // The bold lead line that opens the live page.
+  intro           String?
+  bullets         String[]
+  // Benefit chips, e.g. "Reduces inflammation", "Better sleep".
+  benefits        String[]
+  // Narrative sections: [{ heading, body: string[] }].
+  sections        Json     @default("[]")
+  // The service menu: [{ name, description, price? }].
+  offerings       Json     @default("[]")
+  // [{ question, answer }]. Rendered as visible content, never FAQPage schema.
+  faqs            Json     @default("[]")
+  contentApproved Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// An informational authority article ("what is EMDR", "signs of PTSD").
+model Guide {
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  title          String
+  question       String?
+  body           String?
+  contentApproved Boolean  @default(false)
+  publishedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  reviewedById String?
+  reviewedBy   Clinician? @relation("GuideReviewer", fields: [reviewedById], references: [id])
+}
