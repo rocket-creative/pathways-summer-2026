@@ -41,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${body.variable} ${display.variable} h-full`}>
-      <body className="min-h-full flex flex-col pb-14 md:pb-0">
+      <body className="min-h-full flex flex-col pb-[calc(3.5rem+env(safe-area-inset-bottom))] md:pb-0">
         <JsonLd data={[organizationSchema(), webSiteSchema()]} />
         <a
           href="#main"

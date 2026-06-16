@@ -28,14 +28,14 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`nav-in sticky top-0 z-40 transition-colors ${
+      className={`nav-in sticky top-0 z-40 pt-safe-top transition-colors ${
         scrolled || openIndex !== null
           ? "border-b border-rule bg-background/95 backdrop-blur"
           : "border-b border-transparent"
       }`}
     >
-      {/* Row 1: utility bar */}
-      <div className="border-b border-rule/60">
+      {/* Row 1: utility bar (desktop only; mobile calls via the sticky bar and menu) */}
+      <div className="hidden border-b border-rule/60 md:block">
         <div className="mx-auto flex w-full max-w-[var(--container-content)] items-center justify-between gap-md px-md py-xs text-[11px] uppercase tracking-[0.12em] text-text-secondary">
           <p className="hidden sm:block">
             Long Island therapy and holistic wellness
@@ -82,7 +82,7 @@ export function SiteHeader() {
       {/* Row 3: primary nav with mega panels */}
       <div
         ref={navRef}
-        className="relative hidden border-t border-rule/60 md:block"
+        className="relative hidden select-none border-t border-rule/60 md:block"
         onMouseLeave={close}
         onKeyDown={(event) => {
           if (event.key === "Escape") close();

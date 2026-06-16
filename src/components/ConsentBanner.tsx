@@ -36,7 +36,7 @@ export function ConsentBanner() {
       role="dialog"
       aria-modal="false"
       aria-labelledby="consent-heading"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-background md:bottom-4 md:left-auto md:right-4 md:max-w-[var(--read-md)] md:border"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-rule bg-background pb-safe-bottom md:bottom-4 md:left-auto md:right-4 md:max-w-[var(--read-md)] md:border md:pb-0"
     >
       <div className="px-md py-md">
         <h2

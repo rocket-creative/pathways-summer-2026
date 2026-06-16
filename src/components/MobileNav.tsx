@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Arrow } from "@/components/ui/Arrow";
 import type { NavSection } from "@/lib/nav";
@@ -11,7 +11,10 @@ import { site } from "@/lib/site";
 export function MobileNav({ sections }: { sections: NavSection[] }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
 
+  // Lock body scroll while the overlay is open.
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -19,20 +22,37 @@ export function MobileNav({ sections }: { sections: NavSection[] }) {
     };
   }, [open]);
 
+  // Close on Escape; move focus into the overlay on open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    const first = overlayRef.current?.querySelector<HTMLElement>(
+      "a, button",
+    );
+    first?.focus();
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const closeAll = () => {
     setOpen(false);
     setExpanded(null);
+    // Return focus to the control that opened the menu.
+    triggerRef.current?.focus();
   };
 
   return (
     <div className="md:hidden">
       <button
+        ref={triggerRef}
         type="button"
         aria-expanded={open}
         aria-controls="mobile-nav"
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((value) => !value)}
-        className="flex h-11 w-11 flex-col items-center justify-center gap-[6px]"
+        className="flex h-11 w-11 flex-col items-center justify-center gap-[6px] select-none"
       >
         <span
           className={`block h-px w-6 bg-text transition-transform ${open ? "translate-y-[3.5px] rotate-45" : ""}`}
@@ -44,8 +64,12 @@ export function MobileNav({ sections }: { sections: NavSection[] }) {
 
       {open ? (
         <div
+          ref={overlayRef}
           id="mobile-nav"
-          className="mobile-overlay fixed inset-0 z-50 flex flex-col bg-background"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Navigation menu"
+          className="mobile-overlay fixed inset-0 z-50 flex select-none flex-col bg-background pt-safe-top pb-safe-bottom"
         >
           <div className="flex items-center justify-between border-b border-rule px-md py-md">
             <Link
