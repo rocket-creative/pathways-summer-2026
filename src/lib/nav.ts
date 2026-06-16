@@ -16,7 +16,7 @@ export const navSections: NavSection[] = [
         heading: "Pathway to Wisdom",
         links: [
           { href: "/therapy", label: "Therapy overview" },
-          { href: "/clinicians", label: "Our clinicians" },
+          { href: "/clinicians", label: "Provider directory" },
           { href: "/insurance", label: "Insurance" },
           { href: "/guide", label: "Guides" },
           { href: "/resources", label: "Resources" },
@@ -123,6 +123,7 @@ export const navSections: NavSection[] = [
         heading: "Offices",
         links: [
           { href: "/locations", label: "All locations" },
+          { href: "/clinicians", label: "Provider directory" },
           { href: "/locations/smithtown", label: "Smithtown" },
           { href: "/locations/garden-city", label: "Garden City" },
           { href: "/locations/massapequa", label: "Massapequa" },

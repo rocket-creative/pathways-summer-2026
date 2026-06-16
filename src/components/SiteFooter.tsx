@@ -56,7 +56,7 @@ export function SiteFooter() {
               Services
             </Link>
             <Link href="/clinicians" className="hover:underline underline-offset-4">
-              Clinicians
+              Provider directory
             </Link>
             <Link href="/locations" className="hover:underline underline-offset-4">
               Locations
