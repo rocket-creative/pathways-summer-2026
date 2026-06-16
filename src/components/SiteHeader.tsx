@@ -55,30 +55,33 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Row 2: brand and call to action */}
-      <div className="mx-auto flex w-full max-w-[var(--container-content)] items-center justify-between px-md py-md">
+      {/* Row 2: brand and call to action. The logo carries the wordmark, so no
+          text is set beside it. Centered on mobile, left aligned from md up. */}
+      <div className="relative mx-auto flex min-h-[5.5rem] w-full max-w-[var(--container-content)] items-center px-md py-sm md:min-h-0">
         <Link
           href="/"
           onClick={close}
-          className="nav-link flex items-center gap-sm text-lg font-medium tracking-tight"
+          aria-label={site.name}
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 md:static md:translate-x-0 md:translate-y-0"
         >
           <Image
             src="/images/brand/logo.png"
-            alt=""
-            width={128}
-            height={128}
+            alt={site.name}
+            width={1936}
+            height={1818}
             priority
-            className="h-32 w-32 shrink-0"
+            className="h-20 w-auto md:h-32 lg:h-40"
           />
-          {site.name}
         </Link>
-        <div className="hidden items-center gap-md md:flex">
-          <ProviderSearch className="w-48 lg:w-60" />
-          <LinkButton href="/contact" variant="solid" arrow>
-            Get started
-          </LinkButton>
+        <div className="ml-auto flex items-center gap-md">
+          <div className="hidden items-center gap-md md:flex">
+            <ProviderSearch className="w-48 lg:w-60" />
+            <LinkButton href="/contact" variant="solid" arrow>
+              Get started
+            </LinkButton>
+          </div>
+          <MobileNav sections={navSections} />
         </div>
-        <MobileNav sections={navSections} />
       </div>
 
       {/* Row 3: primary nav with mega panels */}
