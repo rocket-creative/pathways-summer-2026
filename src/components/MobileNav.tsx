@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Arrow } from "@/components/ui/Arrow";
+import { ProviderSearch } from "@/components/ProviderSearch";
 import type { NavSection } from "@/lib/nav";
 import { site } from "@/lib/site";
 
@@ -96,6 +97,7 @@ export function MobileNav({ sections }: { sections: NavSection[] }) {
             aria-label="Mobile"
             className="flex-1 overflow-y-auto px-md py-lg"
           >
+            <ProviderSearch className="mb-lg w-full" onSubmitted={closeAll} />
             <ul className="border-t border-rule">
               {sections.map((section) => {
                 const isOpen = expanded === section.label;

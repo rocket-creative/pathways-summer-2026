@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ProviderCard } from "@/components/ProviderCard";
 import { Arrow } from "@/components/ui/Arrow";
 import { ActionButton, AnchorButton } from "@/components/ui/Button";
@@ -158,8 +158,8 @@ export function ProviderDirectory({ data }: { data: DirectoryData }) {
     setZipNotice(null);
   }, []);
 
-  const onZipSearch = useCallback(async () => {
-    const clean = zip.trim();
+  const runZipSearch = useCallback(async (raw: string) => {
+    const clean = raw.trim();
     const state = stateForZip(clean);
     if (!state) {
       setActive((prev) => ({ ...prev, location: "" }));
@@ -201,7 +201,25 @@ export function ProviderDirectory({ data }: { data: DirectoryData }) {
       );
     }
     noticeRef.current?.focus();
-  }, [zip]);
+  }, []);
+
+  // Honor a `find` query from the nav search on first load: a five digit value
+  // runs the ZIP search, anything else prefills the name filter. This is a one
+  // time, post hydration sync from the URL, so it lives in an effect (which
+  // avoids a hydration mismatch on the statically prerendered page) and the
+  // extra render it causes is intended.
+  useEffect(() => {
+    const find = new URLSearchParams(window.location.search).get("find");
+    if (!find) return;
+    const value = find.trim();
+    if (/^\d{5}$/.test(value)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setZip(value);
+      void runZipSearch(value);
+    } else {
+      setActive((prev) => ({ ...prev, query: value }));
+    }
+  }, [runZipSearch]);
 
   return (
     <div className="mt-section">
@@ -211,7 +229,7 @@ export function ProviderDirectory({ data }: { data: DirectoryData }) {
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            void onZipSearch();
+            void runZipSearch(zip);
           }}
           className="grid gap-md md:grid-cols-[1fr_auto_1fr] md:items-end"
         >

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MobileNav } from "@/components/MobileNav";
+import { ProviderSearch } from "@/components/ProviderSearch";
 import { LinkButton } from "@/components/ui/Button";
 import { navSections } from "@/lib/nav";
 import { site } from "@/lib/site";
@@ -64,14 +65,15 @@ export function SiteHeader() {
           <Image
             src="/images/brand/logo.png"
             alt=""
-            width={32}
-            height={32}
+            width={128}
+            height={128}
             priority
-            className="h-8 w-8 shrink-0"
+            className="h-32 w-32 shrink-0"
           />
           {site.name}
         </Link>
         <div className="hidden items-center gap-md md:flex">
+          <ProviderSearch className="w-48 lg:w-60" />
           <LinkButton href="/contact" variant="solid" arrow>
             Get started
           </LinkButton>
