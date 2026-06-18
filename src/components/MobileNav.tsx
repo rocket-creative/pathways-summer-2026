@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Arrow } from "@/components/ui/Arrow";
 import { ProviderSearch } from "@/components/ProviderSearch";
@@ -12,8 +13,14 @@ import { site } from "@/lib/site";
 export function MobileNav({ sections }: { sections: NavSection[] }) {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // The overlay is portalled to the body, so it needs the client document.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Lock body scroll while the overlay is open.
   useEffect(() => {
@@ -63,15 +70,16 @@ export function MobileNav({ sections }: { sections: NavSection[] }) {
         />
       </button>
 
-      {open ? (
-        <div
-          ref={overlayRef}
-          id="mobile-nav"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-          className="mobile-overlay fixed inset-0 z-50 flex select-none flex-col bg-background pt-safe-top pb-safe-bottom"
-        >
+      {open && mounted
+        ? createPortal(
+            <div
+              ref={overlayRef}
+              id="mobile-nav"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Navigation menu"
+              className="mobile-overlay fixed inset-0 z-50 flex select-none flex-col bg-background pt-safe-top pb-safe-bottom"
+            >
           <div className="flex items-center justify-between border-b border-rule px-md py-md">
             <Link
               href="/"
@@ -193,8 +201,10 @@ export function MobileNav({ sections }: { sections: NavSection[] }) {
               Call {site.phoneDisplay} <Arrow />
             </a>
           </div>
-        </div>
-      ) : null}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
