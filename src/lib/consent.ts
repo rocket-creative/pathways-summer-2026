@@ -34,21 +34,44 @@ export function gpcEnabled(): boolean {
   );
 }
 
+// useSyncExternalStore requires getSnapshot to return a referentially stable
+// value when nothing changed, or it loops and tears down the tree. Cache the
+// parsed object keyed by the raw stored string so repeat reads return the same
+// reference until the visitor's choice actually changes.
+let snapshotRaw: string | null = null;
+let snapshotValue: Consent | null = null;
+
 export function readConsent(): Consent | null {
   if (typeof window === "undefined") return null;
+
+  let raw: string | null;
   try {
-    const raw = window.localStorage.getItem(CONSENT_KEY);
-    if (!raw) return null;
+    raw = window.localStorage.getItem(CONSENT_KEY);
+  } catch {
+    return null;
+  }
+
+  if (raw === snapshotRaw) return snapshotValue;
+  snapshotRaw = raw;
+
+  if (!raw) {
+    snapshotValue = null;
+    return snapshotValue;
+  }
+
+  try {
     const parsed = JSON.parse(raw) as Partial<Consent>;
-    return {
+    snapshotValue = {
       necessary: true,
       preferences: Boolean(parsed.preferences),
       analytics: Boolean(parsed.analytics),
       marketing: Boolean(parsed.marketing),
     };
   } catch {
-    return null;
+    snapshotValue = null;
   }
+
+  return snapshotValue;
 }
 
 export function writeConsent(consent: Consent) {
